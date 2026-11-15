@@ -51,6 +51,8 @@
     container: "map", style, center: [-57, -17.5], zoom: 3.4, pitch: 0, bearing: 0,
     maxPitch: 75, attributionControl: { compact: true }, hash: false
   });
+  map.scrollZoom.setWheelZoomRate(1 / 200);
+  map.scrollZoom.setZoomRate(1 / 70);
   map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), "top-right");
   map.addControl(new maplibregl.ScaleControl({ unit: "metric" }), "bottom-right");
   map.addControl(new maplibregl.GlobeControl(), "top-right");
@@ -59,6 +61,12 @@
     if (tr && bar) tr.style.top = Math.round(bar.getBoundingClientRect().bottom + 2) + "px";
   }
   placeControls(); addEventListener("resize", placeControls);
+  document.getElementById("collapse").addEventListener("click", (e) => {
+    const p = document.querySelector(".panel"), min = p.classList.toggle("min");
+    e.currentTarget.textContent = min ? "+" : "–";
+    e.currentTarget.setAttribute("aria-expanded", String(!min));
+    e.currentTarget.setAttribute("aria-label", min ? "Show details" : "Hide details");
+  });
 
   function boxGeo() {
     const { w, s, e, n } = BOX;
@@ -327,7 +335,8 @@
     monthly.rows.forEach((row) => { const o = Object.fromEntries(K.map((k, i) => [k, row[i]])); if (o.snpp != null) state.monthly[o.start] = o; });
     addLayers(); setupUI(); setSensor("v");
     $("loading").classList.add("hide");
-    document.querySelectorAll(".maplibregl-compact-show").forEach((el) => el.classList.remove("maplibregl-compact-show"));
+    const fold = () => document.querySelectorAll(".maplibregl-compact-show").forEach((el) => el.classList.remove("maplibregl-compact-show"));
+    fold(); map.on("resize", () => setTimeout(fold, 0));
     const calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
     map.once("moveend", enableTerrain);
     map.flyTo({ ...HOME, duration: calm ? 0 : 3400, essential: true, curve: 1.4 });

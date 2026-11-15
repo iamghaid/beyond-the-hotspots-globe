@@ -8,12 +8,14 @@
 <meta name="theme-color" content="#0B141C">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://server.arcgisonline.com" crossorigin>
-<link rel="preconnect" href="https://unpkg.com" crossorigin>
+<link rel="preload" href="fires.json" as="fetch" crossorigin="anonymous">
+<link rel="preload" href="monthly.json" as="fetch" crossorigin="anonymous">
+<link rel="preload" href="maplibre-gl.js" as="script">
 <link rel="preconnect" href="https://s3.amazonaws.com" crossorigin>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.6.0/dist/maplibre-gl.css">
+<link rel="stylesheet" href="maplibre-gl.css">
 <style>
   :root {
     --bg: #0B141C; --panel: rgba(14, 24, 35, .82); --panel-solid: #0F1B28; --line: rgba(255,255,255,.12);
@@ -163,7 +165,7 @@
 
 <div class="credits">Imagery © Esri, Maxar, Earthstar Geographics · Terrain: Mapzen/AWS Terrarium · Fire data: NASA FIRMS · Search: © OpenStreetMap (Nominatim)</div>
 
-<script src="https://unpkg.com/maplibre-gl@5.6.0/dist/maplibre-gl.js"></script>
+<script src="maplibre-gl.js"></script>
 <script src="app.js"></script>
 </body>
 </html>

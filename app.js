@@ -42,13 +42,13 @@
     },
     layers: [
       { id: "bg", type: "background", paint: { "background-color": "#0B141C" } },
-      { id: "imagery", type: "raster", source: "imagery", paint: { "raster-saturation": -0.2, "raster-contrast": 0.08, "raster-brightness-max": 0.72 } },
+      { id: "imagery", type: "raster", source: "imagery", paint: { "raster-saturation": -0.2, "raster-contrast": 0.08, "raster-brightness-max": 0.72, "raster-fade-duration": 0 } },
       { id: "hillshade", type: "hillshade", source: "dem", paint: { "hillshade-exaggeration": 0.35, "hillshade-shadow-color": "#000000", "hillshade-highlight-color": "#ffffff" } }
     ]
   };
 
   const map = new maplibregl.Map({
-    container: "map", style, center: [-57, -17], zoom: 2.6, pitch: 0, bearing: 0,
+    container: "map", style, center: [-57, -17.5], zoom: 3.4, pitch: 0, bearing: 0,
     maxPitch: 75, attributionControl: { compact: true }, hash: false
   });
   map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), "top-right");

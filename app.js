@@ -63,9 +63,27 @@
   function cellsGeo(ym, sensor) {
     const f = state.fires;
     const rec = f && f.months[ym];
-    const arr = rec ? rec[sensor] : null;
     const g = f.grid, half = g.step * 0.36;
     const feats = [], pts = [];
+    if (sensor === "b") {
+      const mm = new Map(), vv = new Map();
+      const am = (rec && rec.m) || [], av = (rec && rec.v) || [];
+      for (let i = 0; i < am.length; i += 2) mm.set(am[i], am[i + 1]);
+      for (let i = 0; i < av.length; i += 2) vv.set(av[i], av[i + 1]);
+      const cnt = [0, 0, 0];
+      for (const cell of new Set([...mm.keys(), ...vv.keys()])) {
+        const dm = mm.get(cell) || 0, dv = vv.get(cell) || 0;
+        const k = dm && dv ? 2 : dv ? 1 : 0, d = Math.max(dm, dv);
+        cnt[k]++;
+        const row = Math.floor(cell / g.nc), col = cell % g.nc;
+        const x = g.w + (col + 0.5) * g.step, y = g.s + (row + 0.5) * g.step;
+        feats.push({ type: "Feature", properties: { d, k, cell }, geometry: { type: "Polygon", coordinates: [[[x - half, y - half], [x + half, y - half], [x + half, y + half], [x - half, y + half], [x - half, y - half]]] } });
+        pts.push({ type: "Feature", properties: { d }, geometry: { type: "Point", coordinates: [x, y] } });
+      }
+      state.cnt = cnt;
+      return { cells: { type: "FeatureCollection", features: feats }, points: { type: "FeatureCollection", features: pts } };
+    }
+    const arr = rec ? rec[sensor] : null;
     if (arr) {
       for (let i = 0; i < arr.length; i += 2) {
         const cell = arr[i], d = arr[i + 1];
@@ -78,6 +96,8 @@
     return { cells: { type: "FeatureCollection", features: feats }, points: { type: "FeatureCollection", features: pts } };
   }
 
+  const CAT = { both: "#FFB02E", v: "#3FC8F2", m: "#E65AD6" };
+  const catExpr = ["match", ["get", "k"], 2, CAT.both, 1, CAT.v, CAT.m];
   const colorExpr = ["interpolate", ["linear"], ["get", "d"], STOPS[0], RAMP[0], STOPS[1], RAMP[1], STOPS[2], RAMP[2], STOPS[3], RAMP[3], STOPS[4], RAMP[4]];
 
   function addLayers() {
@@ -132,7 +152,13 @@
     const r = state.monthly[ym];
     $("s-m").textContent = fmt(r && r.modis); $("s-v").textContent = fmt(r && r.snpp); $("s-h").textContent = fmt(r && r.est, 0);
     const has = state.fires && state.fires.months[ym];
-    $("note").textContent = has
+    if (has && state.sensor === "b" && state.cnt) {
+      const [cm, cv, cb] = state.cnt;
+      $("n-both").textContent = fmt(cb); $("n-v").textContent = fmt(cv); $("n-m").textContent = fmt(cm);
+    }
+    $("note").textContent = has && state.sensor === "b"
+      ? "Each column is a ~2 km cell, colored by which sensor caught burning there that month. Cells only VIIRS saw are usually small or short fires MODIS misses. Height shows the larger day count of the two."
+      : has
       ? "Each column is a ~2 km cell. Height and color show on how many days that month the satellite detected burning there. Totals above are the official cell-day values from the calendar."
       : "No NASA FIRMS map data for this month yet. Totals above still come from the calendar.";
     if ($("place").classList.contains("open") && state.lastClick) describePlace(state.lastClick, false);
@@ -140,8 +166,11 @@
   function setSensor(s) {
     state.sensor = s;
     document.querySelectorAll(".seg button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.s === s)));
-    document.querySelector(".stat.m").classList.toggle("active", s === "m");
-    document.querySelector(".stat.v").classList.toggle("active", s === "v");
+    document.querySelector(".stat.m").classList.toggle("active", s === "m" || s === "b");
+    document.querySelector(".stat.v").classList.toggle("active", s === "v" || s === "b");
+    const c = s === "b" ? catExpr : colorExpr;
+    if (map.getLayer("cells-flat")) { map.setPaintProperty("cells-flat", "fill-color", c); map.setPaintProperty("cells-3d", "fill-extrusion-color", c); }
+    $("legend-days").hidden = s === "b"; $("legend-both").hidden = s !== "b";
     setMonth(state.ym);
   }
   function months() { return Object.keys(state.monthly).sort(); }

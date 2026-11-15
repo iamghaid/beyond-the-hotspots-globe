@@ -64,6 +64,11 @@
   .stat.v.active { border-color: rgba(111,183,255,.7); }
   .note { font-size: 12px; color: var(--text-2); margin: 10px 0 0; line-height: 1.45; }
   .legend { margin-top: 12px; }
+  .legend.both { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12.5px; color: var(--text-2); align-items: center; }
+  .legend.both[hidden] { display: none; }
+  .legend.both i { display: inline-block; width: 11px; height: 11px; border-radius: 3px; margin-inline-end: 6px; vertical-align: -1px; }
+  .legend.both b { color: var(--text); font-variant-numeric: tabular-nums; margin-inline-start: 4px; }
+  .legend.both small { width: 100%; font-size: 11px; }
   .legend .ramp { height: 9px; border-radius: 5px; }
   .legend .ticks { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-2); margin-top: 3px; }
   .toggles { display: flex; gap: 14px; margin-top: 10px; font-size: 13px; color: var(--text-2); }
@@ -123,15 +128,22 @@
   <div class="seg" role="group" aria-label="Sensor shown on the map">
     <button data-s="m" aria-pressed="false">MODIS (Terra + Aqua)</button>
     <button data-s="v" aria-pressed="true">VIIRS (S-NPP)</button>
+    <button data-s="b" aria-pressed="false">Both</button>
   </div>
   <div class="stats">
     <div class="stat m"><small>Observed MODIS</small><b id="s-m">–</b></div>
     <div class="stat v active"><small>Observed VIIRS</small><b id="s-v">–</b></div>
     <div class="stat"><small>Harmonized MODIS</small><b id="s-h">–</b></div>
   </div>
-  <div class="legend" aria-hidden="true">
+  <div class="legend" id="legend-days" aria-hidden="true">
     <div class="ramp" id="ramp"></div>
     <div class="ticks"><span>1 day</span><span>Days with detections in each 2 km cell</span><span id="tick-max">10+</span></div>
+  </div>
+  <div class="legend both" id="legend-both" hidden>
+    <span><i style="background:#FFB02E"></i>Both sensors <b id="n-both">–</b></span>
+    <span><i style="background:#3FC8F2"></i>VIIRS only <b id="n-v">–</b></span>
+    <span><i style="background:#E65AD6"></i>MODIS only <b id="n-m">–</b></span>
+    <small>Number of 2 km cells</small>
   </div>
   <div class="toggles">
     <label><input type="checkbox" id="t-3d" checked> 3D columns</label>

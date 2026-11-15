@@ -54,6 +54,11 @@
   map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), "top-right");
   map.addControl(new maplibregl.ScaleControl({ unit: "metric" }), "bottom-right");
   map.addControl(new maplibregl.GlobeControl(), "top-right");
+  function placeControls() {
+    const tr = document.querySelector(".maplibregl-ctrl-top-right"), bar = document.querySelector(".top");
+    if (tr && bar) tr.style.top = Math.round(bar.getBoundingClientRect().bottom + 2) + "px";
+  }
+  placeControls(); addEventListener("resize", placeControls);
 
   function boxGeo() {
     const { w, s, e, n } = BOX;

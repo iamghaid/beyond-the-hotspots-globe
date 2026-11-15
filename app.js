@@ -322,6 +322,7 @@
     monthly.rows.forEach((row) => { const o = Object.fromEntries(K.map((k, i) => [k, row[i]])); if (o.snpp != null) state.monthly[o.start] = o; });
     addLayers(); setupUI(); setSensor("v");
     $("loading").classList.add("hide");
+    document.querySelectorAll(".maplibregl-compact-show").forEach((el) => el.classList.remove("maplibregl-compact-show"));
     const calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
     map.once("moveend", enableTerrain);
     map.flyTo({ ...HOME, duration: calm ? 0 : 3400, essential: true, curve: 1.4 });

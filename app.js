@@ -3,7 +3,7 @@
   const MONTHS = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
   const BOX = { w: -58, s: -19.5, e: -56, n: -17 };
   const HOME = { center: [-57.0, -18.35], zoom: 7.3, pitch: 58, bearing: -18 };
-  const RAMP = ["#FCE3B0", "#F8B266", "#EE7A35", "#D4461F", "#9E1F12"];
+  const RAMP = ["#FFE8A3", "#FFC15A", "#FF8A2A", "#F0461C", "#B3160E"];
   const STOPS = [1, 2, 4, 8, 15];
   const $ = (id) => document.getElementById(id);
   const fmt = (v, d = 0) => v == null ? "–" : Number(v).toLocaleString("en-US", { maximumFractionDigits: d });
@@ -42,13 +42,13 @@
     },
     layers: [
       { id: "bg", type: "background", paint: { "background-color": "#0B141C" } },
-      { id: "imagery", type: "raster", source: "imagery", paint: { "raster-saturation": -0.1, "raster-contrast": 0.05 } },
+      { id: "imagery", type: "raster", source: "imagery", paint: { "raster-saturation": -0.2, "raster-contrast": 0.08, "raster-brightness-max": 0.72 } },
       { id: "hillshade", type: "hillshade", source: "dem", paint: { "hillshade-exaggeration": 0.35, "hillshade-shadow-color": "#000000", "hillshade-highlight-color": "#ffffff" } }
     ]
   };
 
   const map = new maplibregl.Map({
-    container: "map", style, center: [-45, -12], zoom: 1.7, pitch: 0, bearing: 0,
+    container: "map", style, center: [-57, -17], zoom: 2.6, pitch: 0, bearing: 0,
     maxPitch: 75, attributionControl: { compact: true }, hash: false
   });
   map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), "top-right");
@@ -64,17 +64,18 @@
     const f = state.fires;
     const rec = f && f.months[ym];
     const arr = rec ? rec[sensor] : null;
-    const g = f.grid, half = g.step * 0.45;
-    const feats = [];
+    const g = f.grid, half = g.step * 0.36;
+    const feats = [], pts = [];
     if (arr) {
       for (let i = 0; i < arr.length; i += 2) {
         const cell = arr[i], d = arr[i + 1];
         const row = Math.floor(cell / g.nc), col = cell % g.nc;
         const x = g.w + (col + 0.5) * g.step, y = g.s + (row + 0.5) * g.step;
         feats.push({ type: "Feature", properties: { d, cell }, geometry: { type: "Polygon", coordinates: [[[x - half, y - half], [x + half, y - half], [x + half, y + half], [x - half, y + half], [x - half, y - half]]] } });
+        pts.push({ type: "Feature", properties: { d }, geometry: { type: "Point", coordinates: [x, y] } });
       }
     }
-    return { type: "FeatureCollection", features: feats };
+    return { cells: { type: "FeatureCollection", features: feats }, points: { type: "FeatureCollection", features: pts } };
   }
 
   const colorExpr = ["interpolate", ["linear"], ["get", "d"], STOPS[0], RAMP[0], STOPS[1], RAMP[1], STOPS[2], RAMP[2], STOPS[3], RAMP[3], STOPS[4], RAMP[4]];
@@ -82,22 +83,33 @@
   function addLayers() {
     map.addSource("box", { type: "geojson", data: boxGeo() });
     map.addSource("cells", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
+    map.addSource("points", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
     map.addLayer({ id: "box-fill", type: "fill", source: "box", paint: { "fill-color": "#F0A050", "fill-opacity": 0.05 } });
     map.addLayer({ id: "labels", type: "raster", source: "labels", paint: { "raster-opacity": 0.95 } });
     map.addLayer({ id: "box-line", type: "line", source: "box", paint: { "line-color": "#FFD08A", "line-width": ["interpolate", ["linear"], ["zoom"], 3, 1.2, 9, 2.6], "line-dasharray": [2, 1.4] } });
+    map.addLayer({ id: "glow", type: "heatmap", source: "points", paint: {
+      "heatmap-weight": ["interpolate", ["linear"], ["get", "d"], 1, 0.25, 8, 0.8, 20, 1],
+      "heatmap-intensity": ["interpolate", ["linear"], ["zoom"], 4, 0.6, 8, 1.1, 11, 1.6],
+      "heatmap-radius": ["interpolate", ["exponential", 2], ["zoom"], 4, 3, 7, 10, 9, 26, 12, 90],
+      "heatmap-color": ["interpolate", ["linear"], ["heatmap-density"], 0, "rgba(255,120,30,0)", 0.15, "rgba(255,110,30,0.35)", 0.4, "rgba(255,140,40,0.65)", 0.7, "rgba(255,200,80,0.85)", 1, "rgba(255,245,200,0.95)"],
+      "heatmap-opacity": 0.85
+    } });
     map.addLayer({ id: "cells-flat", type: "fill", source: "cells", layout: { visibility: "none" }, paint: { "fill-color": colorExpr, "fill-opacity": 0.9 } });
     try {
       map.addLayer({ id: "cells-3d", type: "fill-extrusion", source: "cells", paint: {
         "fill-extrusion-color": colorExpr,
-        "fill-extrusion-height": ["*", ["min", ["get", "d"], 31], 260],
+        "fill-extrusion-height": ["+", 300, ["*", ["min", ["get", "d"], 31], 520]],
         "fill-extrusion-base": 0,
-        "fill-extrusion-opacity": 0.92,
+        "fill-extrusion-opacity": 0.95,
         "fill-extrusion-vertical-gradient": true
       } });
     } catch (e) {
       state.three = false; $("t-3d").checked = false; $("t-3d").disabled = true;
     }
     applyMode();
+  }
+  function enableTerrain() {
+    if (!$("t-terrain").checked) return;
     try { map.setTerrain({ source: "dem", exaggeration: 1.4 }); } catch (e) { $("t-terrain").checked = false; }
   }
 
@@ -113,7 +125,10 @@
     const [y, m] = ym.split("-").map(Number);
     $("year").value = y; $("month").value = m;
     $("period-label").textContent = MONTHS[m - 1] + " " + y;
-    if (map.getSource("cells")) map.getSource("cells").setData(cellsGeo(ym, state.sensor));
+    if (map.getSource("cells")) {
+      const geo = cellsGeo(ym, state.sensor);
+      map.getSource("cells").setData(geo.cells); map.getSource("points").setData(geo.points);
+    }
     const r = state.monthly[ym];
     $("s-m").textContent = fmt(r && r.modis); $("s-v").textContent = fmt(r && r.snpp); $("s-h").textContent = fmt(r && r.est, 0);
     const has = state.fires && state.fires.months[ym];
@@ -271,7 +286,7 @@
   Promise.all([
     fetch("fires.json").then((r) => { if (!r.ok) throw new Error("fires.json " + r.status); return r.json(); }),
     fetch("monthly.json").then((r) => r.json()),
-    new Promise((res) => map.on("load", res))
+    new Promise((res) => { if (map.isStyleLoaded()) res(); else map.once("style.load", res); })
   ]).then(([fires, monthly]) => {
     state.fires = fires;
     const K = monthly.keys;
@@ -279,7 +294,8 @@
     addLayers(); setupUI(); setSensor("v");
     $("loading").classList.add("hide");
     const calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
-    map.flyTo({ ...HOME, duration: calm ? 0 : 5200, essential: true, curve: 1.6 });
+    map.once("moveend", enableTerrain);
+    map.flyTo({ ...HOME, duration: calm ? 0 : 3400, essential: true, curve: 1.4 });
     map.on("click", (e) => { if (!e.originalEvent.target.closest || !e.originalEvent.target.closest(".glass")) describePlace(e.lngLat); });
     map.on("mousemove", "cells-flat", () => { map.getCanvas().style.cursor = "pointer"; });
     map.on("mouseleave", "cells-flat", () => { map.getCanvas().style.cursor = ""; });

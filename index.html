@@ -7,6 +7,9 @@
 <meta name="description" content="Explore where MODIS and VIIRS (S-NPP) detected burning activity in a Pantanal study area, month by month, on a 3D globe.">
 <meta name="theme-color" content="#0B141C">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://server.arcgisonline.com" crossorigin>
+<link rel="preconnect" href="https://unpkg.com" crossorigin>
+<link rel="preconnect" href="https://s3.amazonaws.com" crossorigin>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;500;700&display=swap" rel="stylesheet">
@@ -135,7 +138,7 @@
     <label><input type="checkbox" id="t-labels" checked> Place names</label>
     <label><input type="checkbox" id="t-terrain" checked> Terrain</label>
   </div>
-  <p class="note" id="note">Each column is a ~2 km cell. Height and color show on how many days that month the satellite detected burning there. Switch sensors to see how many more small fires VIIRS picks up.</p>
+  <p class="note" id="note">Each column is a ~2 km cell. Height and color show on how many days that month the satellite detected burning there. The glow marks where burning repeated.</p>
 </section>
 
 <aside class="place glass" id="place" aria-live="polite">
